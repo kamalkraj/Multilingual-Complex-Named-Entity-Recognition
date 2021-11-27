@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 
 pyproject.toml
+
+# data
+training_data/*
