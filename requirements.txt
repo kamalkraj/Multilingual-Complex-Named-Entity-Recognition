@@ -1,0 +1,7 @@
+transformers==4.12.5
+datasets==1.16.1
+jax==0.2.25
+jaxlib==0.1.73
+flax==0.3.6
+optax==0.1.0
+seqeval==1.2.2
