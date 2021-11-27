@@ -132,3 +132,5 @@ pyproject.toml
 
 # data
 training_data/*
+*.json
+models/*
