@@ -1,15 +1,16 @@
 import os
 import sys
 from dataclasses import dataclass, field
+from itertools import chain
 
 import jax
-
 import numpy as np
 from datasets import load_dataset
+from flax.training.common_utils import shard
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from transformers.hf_argparser import HfArgumentParser
-from flax.training.common_utils import shard
+
 from modeling_flax import FlaxBertForTokenClassification
 
 
@@ -44,7 +45,10 @@ class InferenceArguments:
     def __post_init__(self):
         if self.test_file is not None:
             extension = self.test_file.split(".")[-1]
-            assert extension in ["csv", "json"], "`test_file` should be a csv or a json file."
+            assert extension in [
+                "csv",
+                "json",
+            ], "`test_file` should be a csv or a json file."
 
 
 def main():
@@ -95,7 +99,9 @@ def main():
             tagged_positions.append(tagged_positions_for_word)
 
         tokenized_inputs = tokenizer.pad(
-            tokenized_inputs, padding="max_length", max_length=inference_args.max_seq_length
+            tokenized_inputs,
+            padding="max_length",
+            max_length=inference_args.max_seq_length,
         )
         tokenized_inputs["labeled_positions"] = tagged_positions
 
@@ -130,7 +136,8 @@ def main():
         desc="Running inference",
     ):
         outputs = p_model(**batch)
-        logits = outputs.logits.squeeze().argmax(-1)
+        logits = outputs.logits.argmax(-1)
+        logits = np.array([pred for pred in chain(*logits)])
         predictions.extend(logits.tolist())
 
     # evaluate also on leftover examples (not divisible by batch_size)
@@ -139,12 +146,17 @@ def main():
     if num_leftover_samples > 0 and jax.process_index() == 0:
         batch = inference_dataset[-num_leftover_samples:]
         batch = {k: np.array(v) for k, v in batch.items()}
+        outputs = model(**batch)
         logits = outputs.logits.argmax(-1)
         predictions.extend(logits.tolist())
 
     # write predictions to file
     with open(inference_args.output_file, "w") as f:
-        for pred, data in tqdm(zip(predictions, raw_data["test"]), total=len(raw_data["test"]), desc="Formatting results"):
+        for pred, data in tqdm(
+            zip(predictions, raw_data["test"]),
+            total=len(raw_data["test"]),
+            desc="Formatting results",
+        ):
             preds = [config.id2label[logit] for logit in pred[: len(data[text_column_name])]]
             tokens = data[text_column_name]
             assert len(tokens) == len(preds)
