@@ -1,11 +1,23 @@
 # Multilingual-Complex-Named-Entity-Recognition
 
 
-WIP
+## Installation
+
+Build docker image with 
+```bash
+docker build -t multiconer .
+```
+
+Run docker image with
+```bash
+docker run --gpus all --rm -it -v hf-cache:/root/.cache/huggingface/transformers/ -v $(pwd):/workspace multiconer
+```
+
+
 
 ```bash
 # bert-base-cased
-python run_flax_ner.py \
+python3 run_flax_ner.py \
   --model_name_or_path bert-base-cased \
   --train_file training_data_json/EN-English/train.json \
   --validation_file training_data_json/EN-English/dev.json \
@@ -19,7 +31,7 @@ python run_flax_ner.py \
 
 ```bash
 # bert-large-cased
-python run_flax_ner.py \
+python3 run_flax_ner.py \
   --model_name_or_path bert-large-cased \
   --train_file training_data_json/EN-English/train.json \
   --validation_file training_data_json/EN-English/dev.json \
@@ -33,7 +45,7 @@ python run_flax_ner.py \
 
 
 ```bash
-python run_flax_predict.py \
+python3 run_flax_predict.py \
 --model_name_or_path models/bert-ner-conll2003 \
 --test_file training_data_json/EN-English/dev.json \
 --max_seq_length 128 \
